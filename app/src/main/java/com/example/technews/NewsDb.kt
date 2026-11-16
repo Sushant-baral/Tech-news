@@ -19,6 +19,9 @@ interface NewsDao {
 
     @Query("DELETE FROM NewsItem WHERE link NOT IN (SELECT link FROM NewsItem ORDER BY time DESC LIMIT 100)")
     suspend fun trim()
+
+    @Query("DELETE FROM NewsItem WHERE time < :since")
+    suspend fun deleteOld(since: Long)
 }
 
 @Database(entities = [NewsItem::class], version = 1, exportSchema = false)
