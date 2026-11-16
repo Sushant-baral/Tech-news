@@ -20,6 +20,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.technews.getAllNews
 import com.example.technews.ui.theme.TechnewsTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.LocalContext
+import androidx.room.Room
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -36,13 +39,18 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun NewsText(modifier: Modifier = Modifier) {
-    var text by remember { mutableStateOf("Loading...") }
+    val ctx = LocalContext.current
+    val dao = remember { Room.databaseBuilder(ctx, NewsDb::class.java, "news.db").build().dao() }
+    val news by remember { dao.all() }.collectAsState(emptyList())
+    var msg by remember { mutableStateOf("Loading...") }
 
     LaunchedEffect(Unit) {
-        val news = getAllNews()
-        news.forEach { Log.d("NEWS", "${it.source}: ${it.title}") }
-        text = if (news.isEmpty()) "No news. Check your internet." else news.joinToString("\n\n") { "${it.source}: ${it.title}" }
+        val fresh = getAllNews()
+        dao.save(fresh)
+        dao.trim()
+        if (fresh.isEmpty()) msg = "No news. Check your internet."
     }
 
+    val text = if (news.isEmpty()) msg else "${news.size} saved\n\n" + news.joinToString("\n\n") { "${it.source}: ${it.title}\n${it.summary}" }
     Text(text, modifier.verticalScroll(rememberScrollState()).padding(16.dp))
 }

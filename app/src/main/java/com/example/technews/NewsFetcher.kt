@@ -12,6 +12,7 @@ import javax.xml.parsers.DocumentBuilderFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
+import android.text.Html
 
 
 fun text(e: Element, tag: String): String =
@@ -19,6 +20,9 @@ fun text(e: Element, tag: String): String =
 
 fun safe(name: String, load: () -> List<NewsItem>): List<NewsItem> =
     try { load() } catch (e: Exception) { Log.e("NEWS", "$name failed: ${e.message}"); emptyList() }
+
+fun clean(s: String) = Html.fromHtml(s, Html.FROM_HTML_MODE_LEGACY).toString()
+    .replace("\uFFFC", "").replace(Regex("\\s+"), " ").trim().take(200)
 
 fun toMillis(date: String): Long {
     val formats = listOf("EEE, dd MMM yyyy HH:mm:ss Z", "yyyy-MM-dd'T'HH:mm:ssXXX")
@@ -46,7 +50,8 @@ fun getRss(name: String, url: String): List<NewsItem> {
         val link = if (href.isNotEmpty()) href else linkTag?.textContent ?: ""
         val date = text(e, "pubDate").ifEmpty { text(e, "published") }
             .ifEmpty { text(e, "updated") }
-        list.add(NewsItem(text(e, "title").trim(), name, link.trim(), toMillis(date)))
+        val sum = clean(text(e, "description").ifEmpty { text(e, "summary") }.ifEmpty { text(e, "content") })
+        list.add(NewsItem(text(e, "title").trim(), name, link.trim(), toMillis(date), sum))
     }
     return list
 }
@@ -59,7 +64,7 @@ fun getHackerNews(): List<NewsItem> {
         val o = JSONObject(URL("https://hacker-news.firebaseio.com/v0/item/$id.json").readText())
         // some posts (like "Ask HN") have no outside link, so use the HN page
         val link = o.optString("url", "https://news.ycombinator.com/item?id=$id")
-        list.add(NewsItem(o.optString("title"), "Hacker News", link, o.getLong("time") * 1000))
+        list.add(NewsItem(o.optString("title"), "Hacker News", link, o.getLong("time") * 1000, URL(link).host.removePrefix("www.")))
     }
     return list
 }

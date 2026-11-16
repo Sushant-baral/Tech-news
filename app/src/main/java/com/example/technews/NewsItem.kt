@@ -1,8 +1,13 @@
 package com.example.technews
 
+import androidx.room.Entity
+import androidx.room.PrimaryKey
+
+@Entity
 data class NewsItem(
     val title: String,
     val source: String,
-    val link: String,
-    val time: Long   // milliseconds since 1970, easy to sort later
+    @PrimaryKey val link: String,
+    val time: Long,
+    val summary: String = ""
 )
