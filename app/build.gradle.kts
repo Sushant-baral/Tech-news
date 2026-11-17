@@ -56,4 +56,5 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.work.runtime)
 }

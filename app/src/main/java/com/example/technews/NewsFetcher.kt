@@ -13,6 +13,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import android.util.Log
 import android.text.Html
+import android.content.Context
+import androidx.glance.appwidget.updateAll
+import androidx.room.Room
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
 
 
 fun text(e: Element, tag: String): String =
@@ -77,4 +82,18 @@ suspend fun getAllNews(): List<NewsItem> = withContext(Dispatchers.IO) {
     all += safe("Wired") { getRss("Wired", "https://www.wired.com/feed/rss") }
     all += safe("Hacker News") { getHackerNews() }
     all.sortedByDescending { it.time }
+}
+class RefreshWorker(ctx: Context, p: WorkerParameters) : CoroutineWorker(ctx, p) {
+    override suspend fun doWork(): Result {
+        val news = getAllNews()
+        Log.d("REFRESH", "downloaded ${news.size}")
+        if (news.isNotEmpty()) {
+            val dao = Room.databaseBuilder(applicationContext, NewsDb::class.java, "news.db").build().dao()
+            dao.save(news)
+            dao.trim()
+            NewsWidget().updateAll(applicationContext)
+            Log.d("REFRESH", "saved and widget updated")
+        }
+        return Result.success()
+    }
 }
