@@ -22,6 +22,9 @@ interface NewsDao {
 
     @Query("DELETE FROM NewsItem WHERE time < :since")
     suspend fun deleteOld(since: Long)
+
+    @Query("SELECT * FROM NewsItem ORDER BY time DESC")
+    suspend fun list(): List<NewsItem>
 }
 
 @Database(entities = [NewsItem::class], version = 1, exportSchema = false)

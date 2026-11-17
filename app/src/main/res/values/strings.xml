@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">Technews</string>
+    <string name="widget_desc">Latest tech headline. Tap for the next one.</string>
 </resources>
